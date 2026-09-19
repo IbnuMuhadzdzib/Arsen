@@ -61,6 +61,14 @@ def main():
                 print("Tidak ada ucapan terdeteksi, kembali menunggu wake word.")
                 continue
 
+            # --- CEK VOICE COMMAND BAWAAN ---
+            # Kita tangkap string ini sebelum dikirim ke LLM
+            lower_text = user_text.lower()
+            if any(cmd in lower_text for cmd in ["shutdown", "matikan arsen", "berhenti", "matikan program", "matikan sistem"]):
+                print("Shutdown command terdeteksi.")
+                speak("Baik. Arsen telah dimatikan. Sampai jumpa!")
+                break
+
             # 2. Teks -> Jawaban LLM
             reply_text = ask_llm(user_text)
             print(f"Arsen: {reply_text}")

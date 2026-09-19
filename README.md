@@ -224,3 +224,52 @@ merekam, memproses, lalu menjawab dengan suara.
   "pemanasan"). Kalau tetap lambat terus-menerus, ukur tiap komponen secara
   terpisah (tambahkan `print` dengan `time.time()` sebelum-sesudah tiap
   langkah di `main.py`) untuk cari komponen mana yang jadi bottleneck
+
+---
+
+## Fase 2 — Setup Function Calling (Cuaca & Musik)
+
+Dua tool baru ini butuh API key/credential eksternal — keduanya gratis,
+tapi Spotify butuh langkah setup lebih panjang karena pakai OAuth.
+
+### Setup OpenWeatherMap (Cuaca)
+
+1. Daftar akun gratis di [openweathermap.org/api](https://openweathermap.org/api)
+2. Setelah daftar, masuk ke halaman **API keys** di akun kamu, copy API key
+   yang otomatis dibuatkan (atau generate baru)
+3. Tempel API key itu ke `config.py`, baris `OPENWEATHER_API_KEY`
+4. **Catatan**: API key baru biasanya butuh waktu beberapa menit sampai
+   1-2 jam sebelum aktif — kalau langsung dites error "invalid API key",
+   tunggu sebentar dan coba lagi
+5. Edit juga `DEFAULT_LOCATION` di `config.py` ke kota kamu sendiri (format:
+   `"NamaKota,ID"`)
+
+### Setup Spotify (Kontrol Musik)
+
+**Prasyarat: akun Spotify kamu harus Premium** — API kontrol playback tidak
+bisa dipakai akun Free.
+
+1. Buka [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard), login pakai akun Spotify kamu
+2. Klik **Create app**, isi nama & deskripsi bebas
+3. Di bagian **Redirect URIs**, tambahkan persis:
+   ```
+   http://127.0.0.1:8888/callback
+   ```
+   (harus sama persis dengan `SPOTIFY_REDIRECT_URI` di `config.py` — Spotify
+   menolak request kalau tidak cocok)
+4. Save, lalu buka halaman app yang baru dibuat, klik **Settings** untuk
+   lihat **Client ID** dan **Client Secret**
+5. Tempel keduanya ke `config.py` (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`)
+
+**Login pertama kali (sekali saja):**
+
+Saat pertama kali fitur musik dipanggil (misal kamu bilang "putar lagu..."),
+browser akan otomatis terbuka minta kamu login Spotify dan klik **Agree**
+untuk kasih izin. Setelah itu, token disimpan otomatis di file `.cache` di
+folder project — run berikutnya tidak perlu login ulang.
+
+**Sebelum coba kontrol musik**, pastikan:
+- Aplikasi Spotify (HP/laptop/speaker manapun) sedang terbuka — walau tidak
+  sedang muter apapun, minimal app-nya harus "aktif" supaya Spotify tau mau
+  kirim perintah ke device mana
+

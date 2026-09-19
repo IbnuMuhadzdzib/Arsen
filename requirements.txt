@@ -12,12 +12,15 @@ torch                    # Dibutuhkan Silero VAD untuk deteksi hening/bicara.
                          # Tidak dipin ke versi spesifik karena versi lama sering
                          # tidak tersedia untuk versi Python terbaru — kode di
                          # project ini tidak bergantung ke fitur versi tertentu.
+torchaudio               # Dependency wajib dari silero-vad (dipanggil otomatis saat
+                         # torch.hub.load mendownload source silero-vad dari GitHub)
 sounddevice==0.4.7      # Akses mikrofon & speaker dari Python
 numpy                    # Manipulasi array audio (semua audio diproses sebagai angka).
                          # Tidak dipin ke versi spesifik untuk alasan sama seperti torch —
                          # versi lama tidak selalu tersedia sebagai installer siap pakai
                          # untuk versi Python terbaru.
-requests==2.31.0        # Kirim HTTP request ke Ollama (LLM lokal)
+requests==2.31.0        # Kirim HTTP request ke Ollama (LLM lokal) dan OpenWeatherMap
+spotipy==2.24.0          # Kontrol playback Spotify (Fase 2: function calling)
 
 # Cara pakai file ini (dijalankan dari dalam folder arsen-assistant/, virtual env aktif):
 #   pip install -r requirements.txt

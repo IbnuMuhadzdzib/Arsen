@@ -23,7 +23,7 @@ model, utils = torch.hub.load(
 (get_speech_timestamps, _, _, _, _) = utils
 
 
-def record_until_silence(max_seconds: int = 15, silence_limit: float = 2.0) -> np.ndarray:
+def record_until_silence(max_seconds: int = 15, silence_limit: float = 1.0) -> np.ndarray:
     """
     Merekam audio dari mikrofon sampai user diam selama `silence_limit` detik,
     atau sampai `max_seconds` tercapai (safety limit biar nggak rekam selamanya

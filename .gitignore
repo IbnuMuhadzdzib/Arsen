@@ -32,9 +32,23 @@ piper/
 *.wav
 *.mp3
 
-# --- OS / Editor ---
+# --- Memory / Database ---
+# Database SQLite ini isinya histori obrolan PERSONAL kamu sama Arsen —
+# jelas bukan sesuatu yang seharusnya ikut ke-commit ke repo (apalagi kalau
+# repo-nya publik). Setiap orang yang jalanin project ini bakal punya
+# database sendiri-sendiri yang otomatis dibuat saat pertama kali run.
+arsen_memory.db
+
+# --- Kredensial / Token ---
+# spotipy menyimpan token hasil login OAuth Spotify di file ini secara
+# otomatis. INI SANGAT PENTING untuk di-ignore — file ini berisi token akses
+# ke akun Spotify kamu, kalau ke-commit ke repo publik, orang lain bisa pakai
+# token itu buat akses akun Spotify kamu.
+.cache
+
 # File-file "sampah" yang otomatis dibuat sistem operasi atau text editor,
 # nggak relevan sama isi project.
+# --- OS / Editor ---
 .DS_Store          # metadata folder di macOS
 Thumbs.db          # thumbnail cache di Windows
 .vscode/           # pengaturan workspace VS Code (personal, opsional di-ignore)

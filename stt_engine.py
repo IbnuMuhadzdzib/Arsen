@@ -11,12 +11,11 @@ import numpy as np
 # (bukan setiap kali fungsi dipanggil) — supaya loading model yang agak berat
 # nggak diulang tiap ada request, cukup sekali di awal program jalan.
 #
-# "medium"      = ukuran model yang lebih akurat dari "small", terutama untuk
-#                 Bahasa Indonesia dan kalimat pendek informal. Trade-off:
-#                 loading awal lebih lama (~10 detik), tapi inference tetap OK.
+# "small"       = lebih ringan dari medium, cocok buat respons JARVIS instan di CPU
+#                 tanpa latency bermenit-menit.
 # device="cpu"  = eksplisit bilang pakai CPU (bukan GPU).
 # compute_type="int8" = kuantisasi 8-bit — mempercepat proses di CPU.
-stt_model = WhisperModel("medium", device="cpu", compute_type="int8")
+stt_model = WhisperModel("small", device="cpu", compute_type="int8")
 
 # Prompt awal berisi contoh percakapan Bahasa Indonesia informal — ini memberi
 # konteks ke Whisper supaya bias decoding-nya ke bahasa Indonesia casual/slang,
@@ -48,7 +47,7 @@ def transcribe(audio: np.ndarray, sample_rate: int = 16000) -> str:
     segments, info = stt_model.transcribe(
         audio,
         language="id",
-        beam_size=5,
+        beam_size=3,
         vad_filter=True,
         initial_prompt=INITIAL_PROMPT,
     )
