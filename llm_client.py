@@ -10,23 +10,27 @@ beda strukturnya — cek dengan print(data) untuk lihat struktur asli yang
 dikembalikan, lalu sesuaikan key yang diakses di bawah.
 """
 
+import re
 import requests
 from config import OLLAMA_URL, OLLAMA_MODEL, ARSEN_PERSONA
 from tools.schema import TOOLS_SCHEMA, TOOL_FUNCTIONS
+from memory_store import init_db, save_message, load_recent_messages
+
+# Pastikan tabel database sudah siap sebelum dipakai — dipanggil sekali di
+# sini (saat file ini di-import), bukan di main.py, supaya llm_client.py
+# tetap "mandiri" (siapapun yang import file ini otomatis dapat memory yang
+# udah siap, tanpa harus ingat manggil init_db() secara terpisah).
+init_db()
 
 conversation_history = [
     {"role": "system", "content": ARSEN_PERSONA}
 ]
 
-# Batas maksimal pesan di history (1 system + 10 pesan = 5 pasang user+assistant).
-# Tanpa batas ini, history terus menumpuk → context window LLM penuh → jawaban
-# mulai nggaco karena terlalu banyak context yang harus diproses (dan memakan memory yang bikin lambat).
-MAX_HISTORY = 11
+# PRIME histori: begitu program baru nyala, tarik beberapa obrolan terakhir
+# dari database dan masukkan ke conversation_history — supaya Arsen "nyambung"
+# dari sesi sebelumnya, bukan mulai dari nol total tiap kali di-restart.
+conversation_history.extend(load_recent_messages(limit=10))
 
-def _trim_history():
-    """Potong history kalau sudah melebihi batas, pertahankan system prompt."""
-    if len(conversation_history) > MAX_HISTORY:
-        conversation_history[:] = [conversation_history[0]] + conversation_history[-10:]
 
 def ask_llm(user_text: str) -> str:
     """
@@ -37,8 +41,12 @@ def ask_llm(user_text: str) -> str:
     kalau ada), siap dikirim ke tts_engine.
     """
     conversation_history.append({"role": "user", "content": user_text})
-    _trim_history()
-    return _call_ollama_with_tools()
+    save_message("user", user_text)  # simpan permanen ke database
+
+    reply_text = _call_ollama_with_tools()
+
+    save_message("assistant", reply_text)  # simpan permanen ke database
+    return reply_text
 
 
 def _call_ollama_with_tools() -> str:
@@ -53,13 +61,9 @@ def _call_ollama_with_tools() -> str:
             "messages": conversation_history,
             "tools": TOOLS_SCHEMA,  # <- baris baru: kasih tau LLM tools apa aja yang ada
             "stream": False,
-            "options": {
-                "temperature": 0.7,   # Cukup kreatif tapi nggak terlalu random/melenceng.
-                "num_predict": 60,    # Batasi panjang jawaban (~1 kalimat, bikin LLM kilat mikirnya).
-            },
         })
         data = response.json()
-        message = data.get("message", {})
+        message = data["message"]
 
         # .get() dipakai (bukan langsung message["tool_calls"]) karena kalau
         # LLM TIDAK memilih manggil tool, key "tool_calls" ini biasanya tidak
@@ -68,8 +72,29 @@ def _call_ollama_with_tools() -> str:
         tool_calls = message.get("tool_calls")
 
         if not tool_calls:
-            # LLM sudah kasih jawaban teks biasa (bukan minta tool)
-            # → ini jawaban FINAL, simpan ke history dan selesai.
+            # FALLBACK: model kecil (seperti llama3.2:3b) kadang tidak pakai
+            # mekanisme tool_calls resmi, tapi malah menulis MANUAL percobaan
+            # format tool call sebagai teks jawaban biasa — kadang JSON-nya
+            # bahkan rusak/tidak valid. Daripada dibacakan mentah-mentah lewat
+            # TTS (kedengaran aneh banget di suara), kita coba deteksi pola
+            # nama tool di teks itu pakai regex — regex dipilih (bukan
+            # json.loads) karena lebih toleran terhadap JSON yang sedikit rusak.
+            content = message.get("content") or ""
+            match = re.search(r'"name"\s*:\s*"(\w+)"', content)
+
+            if match and match.group(1) in TOOL_FUNCTIONS:
+                fallback_tool_name = match.group(1)
+                # Coba ekstrak argumen juga kalau formatnya kebetulan valid,
+                # tapi kalau gagal (JSON rusak), tetap lanjut dengan argumen
+                # kosong — banyak tool kita (get_weather, pause_music, dll)
+                # punya fallback/default sendiri kalau argumen kosong.
+                tool_calls = [{
+                    "function": {"name": fallback_tool_name, "arguments": {}}
+                }]
+
+        if not tool_calls:
+            # LLM sudah kasih jawaban teks biasa (bukan minta tool, dan bukan
+            # juga pola fallback di atas) → ini jawaban FINAL.
             conversation_history.append(message)
             return message["content"]
 
@@ -87,10 +112,20 @@ def _call_ollama_with_tools() -> str:
                                                                    # string JSON
 
             if function_name in TOOL_FUNCTIONS:
-                # **function_args = "unpack" dictionary jadi keyword arguments.
-                # Contoh: kalau function_args = {"location": "Jakarta"}, baris
-                # ini setara dengan manggil get_weather(location="Jakarta")
-                result = TOOL_FUNCTIONS[function_name](**function_args)
+                try:
+                    # **function_args = "unpack" dictionary jadi keyword
+                    # arguments. Contoh: kalau function_args = {"location":
+                    # "Jakarta"}, baris ini setara dengan manggil
+                    # get_weather(location="Jakarta")
+                    result = TOOL_FUNCTIONS[function_name](**function_args)
+                except TypeError:
+                    # Ini menangkap kasus seperti argumen WAJIB (contoh:
+                    # song_name di play_song) ternyata tidak dikirim LLM sama
+                    # sekali (sering terjadi di jalur fallback regex di atas,
+                    # yang memang tidak bisa mengekstrak argumen dari JSON
+                    # yang rusak) — daripada program crash, kasih pesan yang
+                    # bisa "dipahami" LLM di iterasi berikutnya.
+                    result = f"Tool '{function_name}' butuh informasi tambahan yang belum diberikan, coba tanya ulang ke user detailnya."
             else:
                 # Jaga-jaga kalau LLM "berhalusinasi" manggil nama tool yang
                 # nggak pernah kita daftarkan — daripada program crash,
