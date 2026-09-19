@@ -1,0 +1,26 @@
+# File ini isinya daftar library Python yang dibutuhkan project Arsen.
+# Format: nama_package==versi (tanda == mengunci versi spesifik, biar hasil install
+# konsisten di komputer manapun, nggak tiba-tiba beda perilaku karena update versi baru)
+
+faster-whisper==1.0.3   # Speech-to-Text (telinga Arsen)
+openwakeword==0.6.0     # Wake word detection ("Hey Arsen")
+# piper-tts (package Python) TIDAK dipakai lagi — piper-phonemize (dependency-nya)
+# belum ada versi yang kompatibel dengan Python 3.14. Sebagai gantinya kita pakai
+# Piper versi standalone (piper.exe) yang dipanggil lewat subprocess, lihat
+# tts_engine.py dan README.md bagian "Download Piper Executable".
+torch                    # Dibutuhkan Silero VAD untuk deteksi hening/bicara.
+                         # Tidak dipin ke versi spesifik karena versi lama sering
+                         # tidak tersedia untuk versi Python terbaru — kode di
+                         # project ini tidak bergantung ke fitur versi tertentu.
+sounddevice==0.4.7      # Akses mikrofon & speaker dari Python
+numpy                    # Manipulasi array audio (semua audio diproses sebagai angka).
+                         # Tidak dipin ke versi spesifik untuk alasan sama seperti torch —
+                         # versi lama tidak selalu tersedia sebagai installer siap pakai
+                         # untuk versi Python terbaru.
+requests==2.31.0        # Kirim HTTP request ke Ollama (LLM lokal)
+
+# Cara pakai file ini (dijalankan dari dalam folder arsen-assistant/, virtual env aktif):
+#   pip install -r requirements.txt
+#
+# -r artinya "read from file" — pip akan baca file ini baris per baris dan install semuanya
+# sekaligus, dibanding kamu ketik "pip install faster-whisper" dst satu-satu manual.

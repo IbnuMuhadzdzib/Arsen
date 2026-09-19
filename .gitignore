@@ -1,0 +1,40 @@
+# --- Virtual Environment ---
+# Isi folder ini adalah instalasi Python + semua library, bisa ratusan MB.
+# Ini WAJIB di-ignore karena: (1) ukurannya gede banget buat disimpan di git,
+# (2) isinya bisa di-generate ulang kapan aja tinggal jalanin
+# `pip install -r requirements.txt`, jadi nggak ada gunanya disimpan history-nya,
+# (3) sifatnya machine-specific — venv yang dibuat di komputer kamu belum
+# tentu jalan persis sama di komputer orang lain.
+arsen-env/
+
+# --- Python Cache ---
+# Folder ini otomatis dibuat Python untuk menyimpan file .pyc (bytecode hasil
+# kompilasi) supaya program jalan sedikit lebih cepat di run berikutnya.
+# Nggak perlu disimpan karena otomatis di-generate ulang tiap kali dibutuhkan.
+__pycache__/
+*.pyc
+
+# --- Model Files (Binary, Berat) ---
+# File-file ini adalah model AI yang kamu download manual (wake word, TTS voice,
+# Piper executable) — ukurannya puluhan-ratusan MB per file, dan git BUKAN
+# dirancang buat nyimpen file besar kayak gini secara efisien (repo bakal
+# membengkak drastis, clone jadi lambat). Selain itu, kalau orang lain nge-clone
+# repo ini, mereka toh harus download ulang sendiri dari sumber resminya
+# (openWakeWord, Piper) sesuai README — jadi nggak ada gunanya ikut disimpan.
+models/
+piper/
+
+# --- File Sementara ---
+# tts_engine.py membuat file .wav sementara tiap Arsen bicara — walaupun
+# lokasinya sebenarnya di folder temp sistem (bukan folder project), baris ini
+# jaga-jaga kalau suatu saat ada file wav/audio lain yang numpang kebuat di
+# folder project pas testing manual.
+*.wav
+*.mp3
+
+# --- OS / Editor ---
+# File-file "sampah" yang otomatis dibuat sistem operasi atau text editor,
+# nggak relevan sama isi project.
+.DS_Store          # metadata folder di macOS
+Thumbs.db          # thumbnail cache di Windows
+.vscode/           # pengaturan workspace VS Code (personal, opsional di-ignore)
